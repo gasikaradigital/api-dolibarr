@@ -13,4 +13,4 @@ Dashboard moderne pour la gestion des tiers, produits, factures, projets et tâc
 ## Installation
 1. Cloner le dépôt
 ```bash
-git clone [https://github.com/votre-username/dolibarr-dashboard.git](https://github.com/gasikaradigital/api-dolibarr)
+git clone https://github.com/gasikaradigital/api-dolibarr.git

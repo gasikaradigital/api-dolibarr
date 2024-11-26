@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Dolibarr</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="bg-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <h1 class="text-2xl font-bold text-gray-800">Dolibarr Dashboard</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="relative" id="userInfo">
+                            <span class="text-gray-700">API: erp.gasikara.mg</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Contenu principal -->
+        <main class="max-w-7xl mx-auto px-4 py-6">
+            <!-- Configuration API -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1" for="apiUrl">URL API:</label>
+                        <input type="text" id="apiUrl" value="https://erp.gasikara.mg/api/index.php" readonly
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1" for="apiKey">Clé API:</label>
+                        <input type="text" id="apiKey" value="VJut9YO8gFybZ30D4gBQIB330ye64rfv" readonly
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Menu d'actions -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                <button onclick="showSection('thirdParties')" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition duration-200">
+                    Tiers
+                </button>
+                <button onclick="showSection('products')" 
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition duration-200">
+                    Produits
+                </button>
+                <button onclick="showSection('invoices')" 
+                    class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-md transition duration-200">
+                    Factures
+                </button>
+                <button onclick="showSection('projects')" 
+                    class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition duration-200">
+                    Projets
+                </button>
+                <button onclick="showSection('tasks')" 
+                    class="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-md transition duration-200">
+                    Tâches
+                </button>
+            </div>
+
+            <!-- Zones d'affichage -->
+            <div id="contentArea" class="space-y-6">
+                <div id="thirdParties" class="hidden"></div>
+                <div id="products" class="hidden"></div>
+                <div id="invoices" class="hidden"></div>
+                <div id="projects" class="hidden"></div>
+                <div id="tasks" class="hidden"></div>
+            </div>
+        </main>
+        
+    </div>
+
+    <script>
+        // Configuration de base
+        function getConfig() {
+            return {
+                apiUrl: document.getElementById('apiUrl').value,
+                apiKey: document.getElementById('apiKey').value
+            };
+        }
+
+        // Fonction générique pour les appels API
+        async function callDolibarrApi(endpoint, method = 'GET', body = null) {
+            const config = getConfig();
+            const headers = {
+                'DOLAPIKEY': config.apiKey,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            };
+
+            try {
+                const response = await fetch(`${config.apiUrl}/${endpoint}`, {
+                    method: method,
+                    headers: headers,
+                    body: body ? JSON.stringify(body) : null
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erreur HTTP: ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('Erreur:', error);
+                throw error;
+            }
+        }
+
+        // Gestion de l'affichage des sections
+        function showSection(sectionId) {
+            // Cacher toutes les sections
+            document.querySelectorAll('#contentArea > div').forEach(div => {
+                div.classList.add('hidden');
+            });
+            // Afficher la section demandée
+            const section = document.getElementById(sectionId);
+            section.classList.remove('hidden');
+            
+            // Charger les données correspondantes
+            switch(sectionId) {
+                case 'thirdParties':
+                    loadThirdParties();
+                    break;
+                case 'products':
+                    loadProducts();
+                    break;
+                case 'invoices':
+                    loadInvoices();
+                    break;
+                case 'projects':
+                    loadProjects();
+                    break;
+                case 'tasks':
+                    loadTasks();
+                    break;
+            }
+        }
+
+        // Chargement des tiers
+        async function loadThirdParties() {
+            try {
+                const data = await callDolibarrApi('thirdparties');
+                displayThirdParties(data);
+            } catch (error) {
+                showError('thirdParties', error.message);
+            }
+        }
+
+        // Chargement des produits
+        async function loadProducts() {
+            try {
+                const data = await callDolibarrApi('products');
+                displayProducts(data);
+            } catch (error) {
+                showError('products', error.message);
+            }
+        }
+
+        // Chargement des factures
+        async function loadInvoices() {
+            try {
+                const data = await callDolibarrApi('invoices');
+                displayInvoices(data);
+            } catch (error) {
+                showError('invoices', error.message);
+            }
+        }
+
+        // Chargement des projets
+        async function loadProjects() {
+            try {
+                const data = await callDolibarrApi('projects');
+                displayProjects(data);
+            } catch (error) {
+                showError('projects', error.message);
+            }
+        }
+
+        // Chargement des tâches
+        async function loadTasks() {
+            try {
+                const data = await callDolibarrApi('tasks');
+                displayTasks(data);
+            } catch (error) {
+                showError('tasks', error.message);
+            }
+        }
+
+        // Affichage des tiers
+        function displayThirdParties(data) {
+            const container = document.getElementById('thirdParties');
+            container.innerHTML = `
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4">Liste des Tiers (${data.length})</h2>
+                    <div class="grid gap-4">
+                        ${data.map(thirdParty => `
+                            <div class="border p-4 rounded-md hover:bg-gray-50">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="font-semibold">${thirdParty.name}</h3>
+                                    <span class="text-sm text-gray-500">${thirdParty.code_client || 'N/A'}</span>
+                                </div>
+                                <p class="text-gray-600 text-sm mt-2">${thirdParty.address || ''}</p>
+                                <div class="mt-2 text-sm text-gray-500">
+                                    ${thirdParty.phone || ''} ${thirdParty.email || ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Affichage des produits
+        function displayProducts(data) {
+            const container = document.getElementById('products');
+            container.innerHTML = `
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4">Liste des Produits (${data.length})</h2>
+                    <div class="grid gap-4">
+                        ${data.map(product => `
+                            <div class="border p-4 rounded-md hover:bg-gray-50">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="font-semibold">${product.label}</h3>
+                                    <span class="text-sm text-gray-500">Ref: ${product.ref}</span>
+                                </div>
+                                <p class="text-gray-600 text-sm mt-2">${product.description || 'Aucune description'}</p>
+                                <div class="mt-2">
+                                    <span class="font-bold">${product.price || 0} €</span>
+                                    <span class="text-sm text-gray-500">Stock: ${product.stock || 0}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Affichage des factures
+        function displayInvoices(data) {
+            const container = document.getElementById('invoices');
+            container.innerHTML = `
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4">Liste des Factures (${data.length})</h2>
+                    <div class="grid gap-4">
+                        ${data.map(invoice => `
+                            <div class="border p-4 rounded-md hover:bg-gray-50">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="font-semibold">${invoice.ref}</h3>
+                                    <span class="px-2 py-1 rounded-full text-sm ${getInvoiceStatusColor(invoice.status)}">
+                                        ${getInvoiceStatusText(invoice.status)}
+                                    </span>
+                                </div>
+                                <div class="mt-2">
+                                    <span class="font-bold">${invoice.total_ttc || 0} €</span>
+                                    <span class="text-sm text-gray-500">Date: ${invoice.date || 'N/A'}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Affichage des projets
+        function displayProjects(data) {
+            const container = document.getElementById('projects');
+            container.innerHTML = `
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4">Liste des Projets (${data.length})</h2>
+                    <div class="grid gap-4">
+                        ${data.map(project => `
+                            <div class="border p-4 rounded-md hover:bg-gray-50">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="font-semibold">${project.title || project.ref}</h3>
+                                    <span class="px-2 py-1 rounded-full text-sm ${project.status === 1 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                                        ${project.status === 1 ? 'Actif' : 'Inactif'}
+                                    </span>
+                                </div>
+                                <p class="text-gray-600 text-sm mt-2">${project.description || 'Aucune description'}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Affichage des tâches
+        function displayTasks(data) {
+            const container = document.getElementById('tasks');
+            container.innerHTML = `
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4">Liste des Tâches (${data.length})</h2>
+                    <div class="grid gap-4">
+                        ${data.map(task => `
+                            <div class="border p-4 rounded-md hover:bg-gray-50">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="font-semibold">${task.label}</h3>
+                                    <span class="text-sm text-gray-500">${task.progress || 0}%</span>
+                                </div>
+                                <div class="h-2 bg-gray-200 rounded-full">
+                                    <div class="h-2 bg-blue-600 rounded-full" style="width: ${task.progress || 0}%"></div>
+                                </div>
+                                <div class="mt-2 text-sm text-gray-600">
+                                    Projet: ${task.project_ref || 'Non spécifié'}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Utilitaires
+        function getInvoiceStatusColor(status) {
+            const colors = {
+                0: 'bg-gray-100 text-gray-800',
+                1: 'bg-blue-100 text-blue-800',
+                2: 'bg-green-100 text-green-800',
+                3: 'bg-red-100 text-red-800'
+            };
+            return colors[status] || colors[0];
+        }
+
+        function getInvoiceStatusText(status) {
+            const statuses = {
+                0: 'Brouillon',
+                1: 'Validée',
+                2: 'Payée',
+                3: 'Annulée'
+            };
+            return statuses[status] || 'Inconnu';
+        }
+
+        function showError(containerId, message) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <strong class="font-bold">Erreur!</strong>
+                    <span class="block sm:inline">${message}</span>
+                </div>
+            `;
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            showSection('thirdParties'); // Afficher les tiers par défaut
+        });
+    </script>
+
+</body>
+</html>
